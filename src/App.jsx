@@ -1,10 +1,12 @@
 ﻿import React, { useState } from 'react';
 import { supabase } from './supabaseCliente';
 import { Instagram, Facebook, MessageSquare, User } from 'lucide-react';
+import Login from './components/Login';
 
 const AutoTechAgency = () => {
   const [formData, setFormData] = useState({ nombre: '', email: '', mensaje: '' });
   const [status, setStatus] = useState('');
+  const [showLogin, setShowLogin] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,6 +31,10 @@ const AutoTechAgency = () => {
     }
   };
 
+  if (showLogin) {
+    return <Login onBack={() => setShowLogin(false)} />;
+  }
+
   return (
     <div className="relative min-h-screen bg-[#020202] text-white overflow-hidden">
       <div className="absolute inset-0 z-0">
@@ -41,7 +47,7 @@ const AutoTechAgency = () => {
       </div>
 
       <nav className="relative z-20 flex justify-end p-6">
-        <button className="flex items-center gap-2 px-4 py-2 border border-white/10 rounded-full bg-white/5 hover:bg-white/10 transition-all text-sm font-medium">
+        <button onClick={() => setShowLogin(true)} className="flex items-center gap-2 px-4 py-2 border border-white/10 rounded-full bg-white/5 hover:bg-white/10 transition-all text-sm font-medium cursor-pointer">
           <User size={16} /> Acceso Staff
         </button>
       </nav>
