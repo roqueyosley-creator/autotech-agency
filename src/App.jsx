@@ -1,12 +1,26 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseCliente';
 import { Instagram, Facebook, MessageSquare, User } from 'lucide-react';
 import Login from './components/Login';
+import AdminPanel from './components/AdminPanel';
 
 const AutoTechAgency = () => {
   const [formData, setFormData] = useState({ nombre: '', email: '', mensaje: '' });
   const [status, setStatus] = useState('');
   const [showLogin, setShowLogin] = useState(false);
+  const [session, setSession] = useState(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,6 +45,7 @@ const AutoTechAgency = () => {
     }
   };
 
+  if (session) return <AdminPanel session={session} />;
   if (showLogin) {
     return <Login onBack={() => setShowLogin(false)} />;
   }
