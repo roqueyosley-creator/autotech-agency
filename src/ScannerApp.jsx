@@ -281,44 +281,6 @@ const ScannerApp = () => {
                                 <button onClick={() => setShowDevicePicker(false)} className="text-zinc-600 font-bold uppercase text-xs">Cerrar</button>
                             </div>
 
-                            {/* Historial y Generación de Reporte PDF */}
-                            <div className="bg-zinc-950 border border-zinc-800 rounded-[2.5rem] p-8 shadow-2xl">
-                                <div className="flex items-center justify-between mb-8">
-                                    <div>
-                                        <h3 className="text-white font-black text-xl italic tracking-tighter uppercase">Gestión de Informes</h3>
-                                        <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Documentación Corporativa</p>
-                                    </div>
-                                    <button 
-                                        onClick={handleGenerateReport}
-                                        disabled={saving}
-                                        className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-2xl font-bold text-xs transition-all shadow-lg shadow-blue-900/20 flex items-center gap-2"
-                                    >
-                                        <Activity size={14} className={saving ? 'animate-spin' : ''} />
-                                        {saving ? 'Generando...' : 'GENERAR PDF'}
-                                    </button>
-                                </div>
-
-                                <div className="space-y-4">
-                                    {history.map((session) => (
-                                        <div key={session.id} className="bg-zinc-900/30 border border-zinc-800/50 p-4 rounded-2xl flex items-center justify-between">
-                                            <div className="flex items-center gap-4">
-                                                <div className="p-3 bg-zinc-800 rounded-xl text-zinc-500"><History size={16} /></div>
-                                                <div>
-                                                    <p className="text-xs font-bold text-white">Sesión {new Date(session.created_at).toLocaleDateString()}</p>
-                                                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-mono">VIN: {session.vehicles.vin}</p>
-                                                </div>
-                                            </div>
-                                            <button 
-                                                className="text-[10px] font-black text-blue-500 hover:text-blue-400 uppercase tracking-tighter"
-                                                onClick={() => alert("Cargando reporte histórico...")}
-                                            >
-                                                Ver Detalles
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
                             <div className="space-y-4">
                                 {/* WiFi Option */}
                                 <button
@@ -460,7 +422,31 @@ const ScannerApp = () => {
                         exit={{ opacity: 0, x: -20 }}
                         className="p-6"
                     >
-                        <h2 className="text-2xl font-black uppercase italic mb-6 tracking-tighter">Historial</h2>
+                        <h2 className="text-2xl font-black uppercase italic mb-6 tracking-tighter">Centro de Gestión</h2>
+                        
+                        {/* Generación de Reporte PDF (Session Actual) */}
+                        <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-6 shadow-2xl mb-8">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 className="text-white font-black text-lg italic tracking-tighter uppercase leading-none">Generar Informe</h3>
+                                    <p className="text-zinc-500 text-[8px] font-bold uppercase tracking-widest mt-1">Exportación Corporativa PDF</p>
+                                </div>
+                                <button 
+                                    onClick={handleGenerateReport}
+                                    disabled={saving}
+                                    className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl font-bold text-[10px] transition-all shadow-lg shadow-blue-900/20 flex items-center gap-2"
+                                >
+                                    <Activity size={12} className={saving ? 'animate-spin' : ''} />
+                                    {saving ? 'PROCESANDO...' : 'GENERAR REPORTE'}
+                                </button>
+                            </div>
+                            <div className="p-3 bg-zinc-900/50 rounded-xl border border-zinc-800/50">
+                                <p className="text-[9px] text-zinc-400 uppercase font-bold tracking-tight">Vehículo Actual:</p>
+                                <p className="text-xs font-black text-white mt-0.5">{vehicleData?.make || 'Genérico'} {vehicleData?.model || 'Universal'} <span className="text-zinc-600 ml-1">({selectedVin})</span></p>
+                            </div>
+                        </div>
+
+                        <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-4">Historial de Sesiones</h3>
                         <div className="space-y-4">
                             {history.length > 0 ? (
                                 history.map((report) => (

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Terminal, Save, AlertTriangle, ShieldCheck, ChevronRight } from 'lucide-react';
 
+import { codingService } from '../services/codingService';
+
 /**
  * Área de Programación y Codificación de ECUs
  * Diseño experto para ajustes avanzados.
@@ -9,29 +11,60 @@ import { Terminal, Save, AlertTriangle, ShieldCheck, ChevronRight } from 'lucide
 const ProgrammingWorkspace = () => {
     const [isProgramming, setIsProgramming] = useState(false);
     const [showWarning, setShowWarning] = useState(false);
+    const [selectedItem, setSelectedItem] = useState(null);
     const [consoleOutput, setConsoleOutput] = useState([
-        "> Sistema listo para codificación.",
-        "> Driver de bus CAN inicializado (500kbps).",
-        "> Esperando comando de escritura..."
+        "> Sistema NovaDrive Pro listo para codificación.",
+        "> Protocolo UDS Detectado (ISO 14229).",
+        "> Esperando selección de parámetro..."
     ]);
 
     const adaptations = [
-        { id: '1', name: 'Velocidad Máxima', current: '210 km/h', new: '250 km/h' },
-        { id: '2', name: 'Lucit de Cruce Diurna', current: 'OFF', new: 'ON' },
-        { id: '3', name: 'Start/Stop Memory', current: 'OFF', new: 'ON' },
-        { id: '4', name: 'Comfort Windows', current: 'Normal', new: 'Extended' }
+        { id: 'VMAX', name: 'Velocidad Máxima', current: '210 km/h', new: '250 km/h', did: 'F190', value: 'FA' },
+        { id: 'DRL', name: 'Luces Diurnas (DRL)', current: 'Inactivo', new: 'Activo', did: '2001', value: '01' },
+        { id: 'START_STOP', name: 'Memoria Start/Stop', current: 'OFF', new: 'ON', did: '300A', value: '01' },
+        { id: 'COMFORT', name: 'Comfort Windows', current: 'Standard', new: 'Premium', did: '4402', value: 'FF' }
     ];
 
-    const handleWrite = () => {
+    const handleWrite = async () => {
+        if (!selectedItem) return;
+
         setShowWarning(false);
         setIsProgramming(true);
-        setConsoleOutput(prev => [...prev, "> Iniciando sesión de diagnóstico 0x03...", "> Enviando trama de seguridad 0x27..."]);
         
-        // Simulación de programación
-        setTimeout(() => {
-            setConsoleOutput(prev => [...prev, "> Verificando checksum...", "> Datos grabados exitosamente en EEPROM.", "> Sesión cerrada."]);
+        const log = (msg) => setConsoleOutput(prev => [...prev, `> ${msg}`]);
+
+        try {
+            log(`Iniciando escritura de ${selectedItem.name}...`);
+            
+            // Step 1: Diagnostic Session
+            log("Cambiando a Sesión Extendida (10 03)...");
+            await codingService.startDiagnosticSession('03');
+            
+            // Step 2: Security Access
+            log("Negociando Acceso de Seguridad (27 01)...");
+            await codingService.requestSecurityAccess('01');
+            
+            // Step 3: Write DID
+            log(`Escribiendo Valor ${selectedItem.value} en DID ${selectedItem.did}...`);
+            const writeResult = await codingService.writeDID(selectedItem.did, selectedItem.value);
+            
+            if (writeResult.success) {
+                log("¡Escritura exitosa! Verificando Checksum...");
+                
+                // Step 4: Reset (Optional but recommended)
+                log("Reiniciando Módulo para aplicar cambios (11 01)...");
+                await codingService.resetModule('01');
+                
+                log("PROCESO COMPLETADO EXITOSAMENTE.");
+            } else {
+                log("ERROR: Fallo en la verificación de escritura.");
+            }
+        } catch (error) {
+            log(`ERROR CRÍTICO: ${error.message}`);
+        } finally {
             setIsProgramming(false);
-        }, 3000);
+            setSelectedItem(null);
+        }
     };
 
     return (
@@ -43,17 +76,31 @@ const ProgrammingWorkspace = () => {
 
             <div className="space-y-4 mb-8">
                 {adaptations.map(item => (
-                    <div key={item.id} className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-2xl flex items-center justify-between group hover:border-zinc-700 transition-colors">
-                        <div>
-                            <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-tighter mb-1">{item.name}</h4>
+                    <button 
+                        key={item.id} 
+                        onClick={() => setSelectedItem(item)}
+                        disabled={isProgramming}
+                        className={`w-full p-4 border rounded-2xl flex items-center justify-between group transition-all ${
+                            selectedItem?.id === item.id 
+                            ? 'bg-blue-600/20 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)]' 
+                            : 'bg-zinc-900/50 border-zinc-800 hover:border-zinc-700'
+                        }`}
+                    >
+                        <div className="text-left">
+                            <h4 className={`text-xs font-bold uppercase tracking-tighter mb-1 ${
+                                selectedItem?.id === item.id ? 'text-blue-400' : 'text-zinc-400'
+                            }`}>{item.name}</h4>
                             <div className="flex items-center gap-3">
                                 <span className="text-[10px] text-zinc-600 line-through">{item.current}</span>
                                 <ChevronRight size={10} className="text-blue-500" />
                                 <span className="text-xs font-black text-blue-400 uppercase">{item.new}</span>
                             </div>
                         </div>
-                        <div className="w-2 h-2 rounded-full bg-zinc-800 group-hover:bg-blue-500 transition-colors shadow-[0_0_10px_rgba(59,130,246,0)] group-hover:shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
-                    </div>
+                        <div className="text-right">
+                            <p className="text-[8px] font-mono text-zinc-600 uppercase tracking-widest">DID: {item.did}</p>
+                            <p className="text-[8px] font-mono text-zinc-600 uppercase tracking-widest">VAL: {item.value}</p>
+                        </div>
+                    </button>
                 ))}
             </div>
 
@@ -71,11 +118,15 @@ const ProgrammingWorkspace = () => {
 
             <button 
                 onClick={() => setShowWarning(true)}
-                disabled={isProgramming}
-                className="w-full py-4 bg-white text-black font-black uppercase text-xs tracking-widest rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
+                disabled={isProgramming || !selectedItem}
+                className={`w-full py-4 font-black uppercase text-xs tracking-widest rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 ${
+                    isProgramming || !selectedItem 
+                    ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed shadow-none' 
+                    : 'bg-white text-black hover:bg-zinc-100'
+                }`}
             >
                 <Save size={16} />
-                Ejecutar Programación (Write)
+                {selectedItem ? `Escribir ${selectedItem.name}` : 'Selecciona un Parámetro'}
             </button>
 
             {/* Warning Modal */}
