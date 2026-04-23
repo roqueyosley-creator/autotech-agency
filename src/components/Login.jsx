@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase } from '../supabaseCliente';
+import { supabase } from '../supabaseClient';
 import { Lock, Mail, ChevronLeft, Zap } from 'lucide-react';
 
 const Login = ({ onBack }) => {
