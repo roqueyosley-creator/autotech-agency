@@ -1,5 +1,5 @@
 import React from 'react';
-import { Gauge, History, User, Activity, BarChart3, Cpu, Terminal } from 'lucide-react';
+import { Gauge, History, Activity, BarChart3, Cpu, Terminal, Brain, Fingerprint, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 /**
@@ -8,15 +8,16 @@ import { motion } from 'framer-motion';
 const BottomNav = ({ activeTab, onTabChange }) => {
     const tabs = [
         { id: 'scanner', label: 'Scanner', icon: Gauge },
-        { id: 'analysis', label: 'Analizar', icon: BarChart3 },
-        { id: 'topology', label: 'Red Pro', icon: Cpu },
-        { id: 'program', label: 'Coding', icon: Terminal },
-        { id: 'history', label: 'Informes', icon: History }
+        { id: 'ai', label: 'IA Expert', icon: Brain },
+        { id: 'actuations', label: 'Test ECU', icon: Terminal },
+        { id: 'service', label: 'Resets', icon: Cpu },
+        { id: 'reports', label: 'Reporte', icon: FileText },
+        { id: 'history', label: 'Historial', icon: History }
     ];
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-950/80 backdrop-blur-2xl border-t border-zinc-800 pb-safe pt-2 px-6">
-            <div className="max-w-md mx-auto flex justify-between items-center h-16">
+        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-950/80 backdrop-blur-2xl border-t border-zinc-800 pb-safe pt-2 px-2">
+            <div className="max-w-screen-xl mx-auto flex justify-between items-center h-16">
                 {tabs.map((tab) => {
                     const Icon = tab.icon;
                     const isActive = activeTab === tab.id;
@@ -25,7 +26,7 @@ const BottomNav = ({ activeTab, onTabChange }) => {
                         <button
                             key={tab.id}
                             onClick={() => onTabChange(tab.id)}
-                            className="flex flex-col items-center justify-center relative flex-1 group"
+                            className="flex flex-col items-center justify-center relative flex-1 group min-w-0"
                         >
                             {isActive && (
                                 <motion.div
@@ -34,12 +35,12 @@ const BottomNav = ({ activeTab, onTabChange }) => {
                                 />
                             )}
                             <Icon 
-                                className={`w-6 h-6 transition-all duration-300 ${
+                                className={`w-5 h-5 transition-all duration-300 ${
                                     isActive ? 'text-blue-500 scale-110' : 'text-zinc-600 group-hover:text-zinc-400'
                                 }`} 
                             />
                             <span 
-                                className={`text-[10px] font-bold mt-1 uppercase tracking-tighter transition-all duration-300 ${
+                                className={`text-[8px] font-bold mt-1 uppercase tracking-tighter transition-all duration-300 truncate w-full text-center ${
                                     isActive ? 'text-blue-500' : 'text-zinc-600'
                                 }`}
                             >

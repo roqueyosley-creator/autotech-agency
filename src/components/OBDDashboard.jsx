@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Battery, Activity, ShieldCheck, AlertCircle, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import DtcDetailCard from './DtcDetailCard';
+import ExpertInsightCard from './ExpertInsightCard';
 
 /**
  * Tarjeta de Estado Individual
@@ -51,7 +52,7 @@ const StatusCard = ({ title, value, unit, icon: Icon, color, trend }) => {
   );
 };
 
-const OBDDashboard = ({ data, onSaveReport, saving }) => {
+const OBDDashboard = ({ data, onSaveReport, saving, expertInsight }) => {
     const [selectedDtc, setSelectedDtc] = useState(null);
 
     const statusData = data || {
@@ -142,6 +143,12 @@ const OBDDashboard = ({ data, onSaveReport, saving }) => {
                         trend="Vary"
                     />
                 </main>
+
+                {/* Análisis Experto del Agente */}
+                <ExpertInsightCard 
+                    insight={expertInsight} 
+                    onConsultAI={(ins) => console.log("Consultar IA para:", ins)} 
+                />
 
                 {/* Listado Pro de Errores */}
                 {statusData.codes.length > 0 && (

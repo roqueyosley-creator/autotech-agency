@@ -1,0 +1,36 @@
+{
+  "version": "1.0",
+  "vehicle_profile": "Universal_OBD2",
+  "layout": {
+    "pcm": { "x": 0, "y": 0 },
+    "tcm": { "x": 200, "y": 0 },
+    "abs": { "x": -200, "y": 100 },
+    "srs": { "x": 200, "y": 100 },
+    "bcm": { "x": 0, "y": 200 },
+    "gateway": { "x": 0, "y": -150 }
+  },
+  "buses": [
+    {
+      "id": "can_hs",
+      "name": "HS-CAN (Powertrain)",
+      "type": "CAN",
+      "color": "#3b82f6",
+      "nodes": ["pcm", "tcm", "abs", "srs", "gateway"]
+    },
+    {
+      "id": "can_ms",
+      "name": "MS-CAN (Body)",
+      "type": "CAN",
+      "color": "#10b981",
+      "nodes": ["bcm", "gateway"]
+    }
+  ],
+  "nodes": [
+    { "id": "gateway", "name": "Central Gateway", "type": "gateway", "address": "0x7DF" },
+    { "id": "pcm", "name": "Engine Control (PCM)", "type": "ecu", "address": "0x7E0" },
+    { "id": "tcm", "name": "Transmission (TCM)", "type": "ecu", "address": "0x7E1" },
+    { "id": "abs", "name": "Brake System (ABS)", "type": "ecu", "address": "0x7E2" },
+    { "id": "srs", "name": "Airbag (SRS)", "type": "ecu", "address": "0x7E3" },
+    { "id": "bcm", "name": "Body Control (BCM)", "type": "ecu", "address": "0x7E4" }
+  ]
+}

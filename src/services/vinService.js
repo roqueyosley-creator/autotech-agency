@@ -1,15 +1,15 @@
 /**
- * VIN Decoding Service for NovaDrive Pro
- * Integrates with NHTSA vPIC API for free car/moto decoding.
+ * VIN Decoding Service for AutoTech PRO
+ * Integrates with local Hono backend for advanced AI-enriched decoding.
  */
 
-const NHTSA_API_BASE = 'https://vpic.nhtsa.dot.gov/api/vehicles/decodevin';
+const API_BASE = '/api/vin';
 
 export const vinService = {
     /**
-     * Decodifica un VIN completo usando la API de NHTSA
+     * Decodifica un VIN usando el backend avanzado con IA
      * @param {string} vin 17 digits VIN
-     * @returns {Promise<Object>} Data del vehículo normalizada
+     * @returns {Promise<Object>} Data enriquecida del vehículo
      */
     decode: async (vin) => {
         if (!vin || vin.length < 11) {
@@ -17,45 +17,36 @@ export const vinService = {
         }
 
         try {
-            const response = await fetch(`${NHTSA_API_BASE}/${vin}?format=json`);
-            const data = await response.json();
-
-            if (!data.Results) return null;
-
-            // Mapear los resultados de NHTSA a nuestro modelo interno
-            const result = {};
-            data.Results.forEach(item => {
-                if (item.Variable === "Make") result.make = item.Value;
-                if (item.Variable === "Model") result.model = item.Value;
-                if (item.Variable === "Model Year") result.year = item.Value;
-                if (item.Variable === "Vehicle Type") result.type = item.Value;
-                if (item.Variable === "Engine Number of Cylinders") result.cylinders = item.Value;
-                if (item.Variable === "Fuel Type - Primary") result.fuel = item.Value;
-            });
-
-            // Normalización de tipo (Car vs Moto)
-            const typeLower = (result.type || '').toLowerCase();
-            if (typeLower.includes('motorcycle') || typeLower.includes('moto')) {
-                result.category = 'moto';
-            } else {
-                result.category = 'car';
+            // Llamada al backend local que combina NHTSA + Gemini
+            const response = await fetch(`${API_BASE}/decode/${vin}`);
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || "Error en decodificación");
             }
 
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error("Error en vinService:", error);
+            // Fallback a decodificación básica si el backend falla
             return {
                 vin,
-                make: result.make || 'Desconocido',
-                model: result.model || 'Desconocido',
-                year: result.year || '',
-                type: result.category,
-                details: {
-                    fuel: result.fuel,
-                    cylinders: result.cylinders
-                }
+                make: 'Error',
+                model: 'Verificar Conexión',
+                year: 'N/A',
+                country: 'Unknown',
+                engine: { displacement: 'N/A', cylinders: 'N/A', fuel: 'N/A' },
+                common_issues: ["No se pudo conectar con el motor de IA."]
             };
-        } catch (error) {
-            console.error("Error decodificando VIN:", error);
-            // Retornar objeto básico si la API falla para no bloquear el flujo
-            return { vin, make: 'Error API', model: 'Reintente', type: 'car' };
         }
+    },
+
+    /**
+     * Valida la estructura de un VIN (Checksum)
+     */
+    isValid: (vin) => {
+        const re = /^[A-HJ-NPR-Z0-9]{17}$/i;
+        return re.test(vin);
     }
 };

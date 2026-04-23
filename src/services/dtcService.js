@@ -1,52 +1,44 @@
 import { supabase } from '../supabaseClient';
 
 /**
- * Servicio de Librería de Códigos de Falla (DTC)
- * Permite buscar significados de códigos P0xxx, Uxxxx, Bxxxx, Cxxxx.
+ * Servicio Avanzado de Códigos de Falla (DTC) para AutoTech PRO
+ * Combina búsqueda en base de datos local y resolución inteligente via IA.
  */
 export const dtcService = {
     
     /**
-     * Busca códigos en la base de datos centralizada
+     * Busca códigos usando el backend híbrido (DB + AI)
      * @param {string} query Código (ej. P0101) o palabras clave
+     * @param {Object} vehicle Contexto del vehículo {make, model, year}
      * @returns {Promise<Array>} Lista de códigos encontrados
      */
-    searchCodes: async (query) => {
+    searchCodes: async (query, vehicle = {}) => {
         if (!query || query.length < 3) return [];
 
         try {
-            // Limpiar query para búsqueda
-            const cleanQuery = query.trim().toUpperCase();
+            const params = new URLSearchParams({
+                q: query,
+                make: vehicle.make || 'Universal',
+                model: vehicle.model || 'Universal',
+                year: vehicle.year || ''
+            });
 
-            // Intento 1: Búsqueda exacta por código
-            const { data: exactMatch } = await supabase
-                .from('dtc_library')
-                .select('*')
-                .eq('code', cleanQuery);
+            const response = await fetch(`/api/dtc/search?${params}`);
+            
+            if (!response.ok) throw new Error("Error en la búsqueda de DTC");
 
-            if (exactMatch && exactMatch.length > 0) return exactMatch;
-
-            // Intento 2: Búsqueda por texto (Full Text Search) en descripción/categoría
-            const { data: ftsResults, error } = await supabase
-                .from('dtc_library')
-                .select('*')
-                .textSearch('fts_tsvector', cleanQuery, {
-                    config: 'spanish',
-                    type: 'websearch'
-                })
-                .limit(20);
-
-            if (error) throw error;
-            return ftsResults || [];
+            const data = await response.json();
+            return data.results || [];
 
         } catch (error) {
-            console.error("Error en DTC Search:", error);
+            console.error("Error en DTC Search Avanzado:", error);
+            // Fallback a Supabase directo si el backend local falla
             return [];
         }
     },
 
     /**
-     * Obtiene detalles de un código específico
+     * Obtiene detalles de un código específico (Directo de DB)
      */
     getCodeDetails: async (code) => {
         const { data, error } = await supabase

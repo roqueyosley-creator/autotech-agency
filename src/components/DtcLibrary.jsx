@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Search, BookOpen, AlertCircle, ChevronRight, X } from 'lucide-react';
+import { Search, BookOpen, AlertCircle, ChevronRight, X, Brain } from 'lucide-react';
 import { dtcService } from '../services/dtcService';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /**
- * Buscador de Códigos de Falla (DTC)
+ * Buscador Avanzado de Códigos de Falla (DTC) con Soporte de IA
  */
-const DtcLibrary = () => {
+const DtcLibrary = ({ vehicleData }) => {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -17,7 +17,7 @@ const DtcLibrary = () => {
         if (!query) return;
 
         setLoading(true);
-        const data = await dtcService.searchCodes(query);
+        const data = await dtcService.searchCodes(query, vehicleData);
         setResults(data);
         setLoading(false);
     };
@@ -37,6 +37,11 @@ const DtcLibrary = () => {
                         onChange={(e) => setQuery(e.target.value)}
                         className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all font-mono"
                     />
+                    {loading && (
+                        <div className="absolute inset-y-0 right-4 flex items-center">
+                            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                        </div>
+                    )}
                 </form>
             </div>
 
@@ -61,7 +66,10 @@ const DtcLibrary = () => {
                                     <p className="text-zinc-500 text-xs line-clamp-1">{dtc.description}</p>
                                 </div>
                             </div>
-                            <ChevronRight size={16} className="text-zinc-600 group-hover:text-white group-hover:translate-x-1 transition-all" />
+                            <div className="flex items-center gap-3">
+                                {dtc.source === 'ai' && <Brain size={12} className="text-blue-500" />}
+                                <ChevronRight size={16} className="text-zinc-600 group-hover:text-white group-hover:translate-x-1 transition-all" />
+                            </div>
                         </motion.div>
                     ))}
                 </AnimatePresence>
@@ -87,7 +95,7 @@ const DtcLibrary = () => {
                             initial={{ y: "100%" }}
                             animate={{ y: 0 }}
                             exit={{ y: "100%" }}
-                            className="bg-zinc-950 w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[2.5rem] border border-zinc-800 p-8 relative max-h-[90vh] overflow-y-auto"
+                            className="bg-zinc-950 w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[2.5rem] border border-zinc-800 p-8 relative max-h-[90vh] overflow-y-auto custom-scrollbar"
                         >
                             <button 
                                 onClick={() => setSelectedCode(null)}
@@ -101,36 +109,47 @@ const DtcLibrary = () => {
                                     <BookOpen size={32} />
                                 </div>
                                 <div>
-                                    <span className="text-red-500 text-[10px] font-black uppercase tracking-[0.2em]">{selectedCode.category || 'Motor'}</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-red-500 text-[10px] font-black uppercase tracking-[0.2em]">{selectedCode.category || 'Motor'}</span>
+                                        {selectedCode.source === 'ai' && (
+                                            <span className="flex items-center gap-1 px-2 py-0.5 bg-blue-500/20 rounded-full text-[8px] font-black text-blue-400 uppercase tracking-widest border border-blue-500/20">
+                                                <Brain size={8} /> IA
+                                            </span>
+                                        )}
+                                    </div>
                                     <h2 className="text-4xl font-black text-white italic tracking-tighter leading-none">{selectedCode.code}</h2>
                                 </div>
                             </div>
 
                             <div className="space-y-6">
                                 <div>
-                                    <h5 className="text-[10px] font-black uppercase text-zinc-600 mb-2 tracking-widest">Descripción</h5>
+                                    <h5 className="text-[10px] font-black uppercase text-zinc-600 mb-2 tracking-widest">Descripción Técnica</h5>
                                     <p className="text-zinc-300 text-sm leading-relaxed">{selectedCode.description}</p>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-zinc-900/50 p-4 rounded-2xl border border-zinc-800">
+                                <div className="grid grid-cols-1 gap-4">
+                                    <div className="bg-zinc-900/50 p-4 rounded-2xl border border-white/5">
                                         <h5 className="text-[10px] font-black uppercase text-zinc-600 mb-2 tracking-widest">Posibles Causas</h5>
-                                        <p className="text-zinc-400 text-xs leading-snug">{selectedCode.possible_causes}</p>
+                                        <p className="text-zinc-400 text-xs leading-relaxed italic">{selectedCode.possible_causes}</p>
                                     </div>
-                                    <div className="bg-zinc-900/50 p-4 rounded-2xl border border-zinc-800">
+                                    <div className="bg-zinc-900/50 p-4 rounded-2xl border border-white/5">
                                         <h5 className="text-[10px] font-black uppercase text-zinc-600 mb-2 tracking-widest">Síntomas</h5>
-                                        <p className="text-zinc-400 text-xs leading-snug">{selectedCode.symptoms}</p>
+                                        <p className="text-zinc-400 text-xs leading-relaxed italic">{selectedCode.symptoms}</p>
                                     </div>
                                 </div>
 
                                 {selectedCode.fix_steps_json && (
-                                    <div className="bg-blue-500/5 border border-blue-500/20 p-6 rounded-3xl">
-                                        <h5 className="text-[10px] font-black uppercase text-blue-500 mb-4 tracking-widest">Pasos de Reparación Pro</h5>
-                                        <div className="space-y-3">
+                                    <div className="bg-blue-600/10 border border-blue-500/20 p-6 rounded-[2rem]">
+                                        <h5 className="flex items-center gap-2 text-[10px] font-black uppercase text-blue-400 mb-4 tracking-widest">
+                                            <Brain size={14} /> Pasos de Reparación Sugeridos
+                                        </h5>
+                                        <div className="space-y-4">
                                             {selectedCode.fix_steps_json.steps?.map((step, i) => (
-                                                <div key={i} className="flex gap-3 text-xs text-zinc-300">
-                                                    <span className="text-blue-500 font-black">{i+1}.</span>
-                                                    <span>{step}</span>
+                                                <div key={i} className="flex gap-4 group">
+                                                    <div className="w-6 h-6 rounded-lg bg-blue-500/20 flex items-center justify-center text-[10px] font-black text-blue-400 shrink-0 group-hover:bg-blue-500 group-hover:text-white transition-all">
+                                                        {i+1}
+                                                    </div>
+                                                    <span className="text-xs text-zinc-300 leading-relaxed pt-1">{step}</span>
                                                 </div>
                                             ))}
                                         </div>
