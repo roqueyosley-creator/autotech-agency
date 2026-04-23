@@ -1,12 +1,13 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { Redis } from "ioredis"; // Asumiendo Redis para caching
 import { supabase } from "../supabaseClient";
 
-// Configuración de Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+// Configuración de Gemini (Vite usa import.meta.env)
+const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
+const genAI = new GoogleGenerativeAI(GEMINI_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
-const redis = new Redis(process.env.REDIS_URL || "");
+// Cache local simple en lugar de Redis (no compatible con frontend bundle)
+const localCache = new Map<string, any>();
 
 const MASTER_SYSTEM_PROMPT = `
 Eres AutoTech AI, un experto mecánico automotriz con 
@@ -70,8 +71,8 @@ export async function analyzeFault(payload: any) {
     
     // Cache Key
     const cacheKey = `diag:${JSON.stringify(dtcs)}:${vehicle.make}:${vehicle.model}`;
-    const cached = await redis.get(cacheKey);
-    if (cached) return JSON.parse(cached);
+    const cached = localCache.get(cacheKey);
+    if (cached) return cached;
 
     const prompt = `
     DATOS DEL VEHÍCULO:
@@ -113,7 +114,7 @@ export async function analyzeFault(payload: any) {
     });
 
     // Caching
-    await redis.set(cacheKey, responseText, "EX", 3600);
+    localCache.set(cacheKey, diagnosis);
 
     return diagnosis;
 }
