@@ -1,5 +1,5 @@
 import React from 'react';
-import { Gauge, History, User, Activity } from 'lucide-react';
+import { Gauge, History, User, Activity, BarChart3, Cpu, Terminal } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 /**

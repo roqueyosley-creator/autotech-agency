@@ -1,5 +1,5 @@
 import { bluetoothService } from './bluetoothService';
-import { TcpClient } from '@devioarts/capacitor-tcpclient';
+import { TCPClient as TcpClient } from '@devioarts/capacitor-tcpclient';
 
 /**
  * Interface Normalizada para Respuestas OBD
@@ -31,6 +31,39 @@ class ConnectionManager {
         // Chips soportados y baud rates comunes para escáneres OBD
         this.usbBaudRates = [38400, 115200, 500000]; 
         this.usbPort = null;
+    }
+
+    /**
+     * Evalúa las capacidades del hardware actual para soportar compatibilidad Multi-Plataforma
+     * (Windows, Apple/iOS/Mac, Android)
+     */
+    getCapabilities() {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isMac = /Macintosh|Mac OS X/.test(navigator.userAgent);
+        
+        // Capacitor inyecta este objeto globalmente en apps nativas
+        const isNative = typeof window !== 'undefined' && !!window.Capacitor?.isNativePlatform();
+        
+        // Electron inyecta variables si es aplicación de escritorio
+        const isElectron = typeof window !== 'undefined' && !!window.process?.versions?.electron;
+
+        return {
+            usb: {
+                supported: ('serial' in navigator) && !isIOS,
+                message: isIOS ? "Apple iOS no permite conexión USB Serial (VAG-COM/OTG)." : "Conecta tu cable USB."
+            },
+            wifi: {
+                // Sockets TCP nativos disponibles en Capacitor (Android/iOS) y Electron (Desktop)
+                // En navegadores web requeriría proxy o WebSockets.
+                supported: isNative || isElectron || true, // true como fallback para pruebas de PWA
+                message: "Interface Wi-Fi estándar."
+            },
+            bluetooth: {
+                // Bluetooth Classic (bluetoothSerial) para Android Nativo, Web Bluetooth para BLE en Mac/Windows/Android-Web
+                supported: (typeof window !== 'undefined' && !!window.bluetoothSerial) || ('bluetooth' in navigator),
+                message: isIOS && !isNative ? "Safari en iOS no soporta Web Bluetooth. Usa la App Nativa." : "Adaptador Bluetooth (Classic / BLE)."
+            }
+        };
     }
 
     /**
