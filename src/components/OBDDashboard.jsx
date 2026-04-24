@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Battery, Activity, ShieldCheck, AlertCircle, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Activity, Battery, ShieldCheck, ChevronRight } from 'lucide-react';
+import { useWindowSize } from '../hooks/useWindowSize';
 import DtcDetailCard from './DtcDetailCard';
 import ExpertInsightCard from './ExpertInsightCard';
 
@@ -8,6 +9,7 @@ import ExpertInsightCard from './ExpertInsightCard';
  * Tarjeta de Estado Individual
  */
 const StatusCard = ({ title, value, unit, icon: Icon, color, trend }) => {
+  const { isMobile } = useWindowSize();
   const colorStyles = {
     blue: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
     amber: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
@@ -21,9 +23,9 @@ const StatusCard = ({ title, value, unit, icon: Icon, color, trend }) => {
       whileHover={{ y: -5 }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800 p-6 rounded-2xl shadow-2xl relative overflow-hidden group"
+      className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800 p-4 sm:p-6 rounded-2xl shadow-2xl relative overflow-hidden group"
     >
-      <div className={`absolute top-0 right-0 w-32 h-32 opacity-10 group-hover:opacity-20 transition-opacity blur-3xl -mr-16 -mt-16 
+      <div className={`absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 opacity-10 group-hover:opacity-20 transition-opacity blur-3xl -mr-12 -mt-12 sm:-mr-16 sm:-mt-16 
         ${color === 'blue' ? 'bg-blue-500' : 
           color === 'amber' ? 'bg-amber-500' : 
           color === 'emerald' ? 'bg-emerald-500' : 
@@ -31,21 +33,21 @@ const StatusCard = ({ title, value, unit, icon: Icon, color, trend }) => {
       />
 
       <div className="flex justify-between items-start mb-4 relative z-10">
-        <div className={`p-3 rounded-xl bg-zinc-800 border border-zinc-700`}>
-          <Icon className={`w-6 h-6 ${colorStyles[color].split(' ')[0]}`} />
+        <div className={`p-2 sm:p-3 rounded-xl bg-zinc-800 border border-zinc-700`}>
+          <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${colorStyles[color].split(' ')[0]}`} />
         </div>
         {trend && (
-          <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-full ${colorStyles[color]}`}>
+          <span className={`text-[8px] sm:text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-full ${colorStyles[color]}`}>
             {trend}
           </span>
         )}
       </div>
 
       <div className="relative z-10">
-        <h3 className="text-zinc-400 text-xs font-bold mb-1 uppercase tracking-widest">{title}</h3>
+        <h3 className="text-zinc-400 text-[10px] sm:text-xs font-bold mb-1 uppercase tracking-widest">{title}</h3>
         <div className="flex items-baseline gap-1">
-          <span className="text-4xl font-black text-white tracking-tighter tabular-nums">{value}</span>
-          <span className="text-zinc-600 text-sm font-bold uppercase">{unit}</span>
+          <span className="text-2xl sm:text-4xl font-black text-white tracking-tighter tabular-nums">{value}</span>
+          <span className="text-zinc-600 text-[10px] sm:text-sm font-bold uppercase">{unit}</span>
         </div>
       </div>
     </motion.div>
@@ -53,6 +55,7 @@ const StatusCard = ({ title, value, unit, icon: Icon, color, trend }) => {
 };
 
 const OBDDashboard = ({ data, onSaveReport, saving, expertInsight }) => {
+    const { isMobile, isDesktop } = useWindowSize();
     const [selectedDtc, setSelectedDtc] = useState(null);
 
     const statusData = data || {
@@ -68,29 +71,32 @@ const OBDDashboard = ({ data, onSaveReport, saving, expertInsight }) => {
     };
 
     return (
-        <div className="flex flex-col min-h-screen bg-black text-zinc-100 p-4 font-sans selection:bg-blue-500/30">
-            {/* Ambient Background Grid - Reduced for mobile density */}
-            <div className="fixed inset-0 z-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:16px_16px]" />
-
-            <div className="max-w-md mx-auto relative z-10 w-full">
-                <header className="mb-8 flex flex-col gap-6">
-                    <div className="flex items-center justify-between">
+        <div className="flex flex-col text-zinc-100 font-sans selection:bg-blue-500/30">
+            <header className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                <div className="flex items-center gap-3">
+                    <div className="w-1.5 h-10 bg-blue-600 rounded-full shadow-[0_0_15px_rgba(37,99,235,0.7)]" />
+                    <div>
                         <div className="flex items-center gap-2">
-                            <div className="w-1.5 h-8 bg-blue-600 rounded-full shadow-[0_0_15px_rgba(37,99,235,0.7)]" />
-                            <h1 className="text-3xl font-black tracking-tighter text-white uppercase italic">Scanner</h1>
-                            <span className="text-blue-500 font-light italic text-xl tracking-widest uppercase">Live</span>
+                            <h1 className="text-3xl sm:text-4xl font-black tracking-tighter text-white uppercase italic">Scanner</h1>
+                            <span className="text-blue-500 font-light italic text-xl sm:text-2xl tracking-widest uppercase animate-pulse">Live</span>
                         </div>
-                        <div className="bg-zinc-900/80 border border-zinc-800 px-3 py-1.5 rounded-lg flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                            <span className="text-[8px] font-bold text-zinc-400 uppercase">Pro Link</span>
-                        </div>
+                        <p className="text-zinc-600 text-[8px] sm:text-[10px] uppercase tracking-widest font-black italic mt-1">
+                            Hardware HAL: {statusData.protocol}
+                        </p>
                     </div>
-                    
+                </div>
+                
+                <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <div className="hidden sm:flex bg-zinc-900/80 border border-zinc-800 px-4 py-2 rounded-xl items-center gap-3 h-fit">
+                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Enlace Estable</span>
+                    </div>
+
                     <button 
                         onClick={onSaveReport}
                         disabled={saving}
-                        className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-3
-                            ${saving ? 'bg-zinc-900 text-zinc-600' : 'bg-white text-black active:scale-95 shadow-[0_10px_30px_-10px_rgba(255,255,255,0.1)]'}
+                        className={`w-full sm:w-auto px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-3
+                            ${saving ? 'bg-zinc-900 text-zinc-600 cursor-not-allowed' : 'bg-white text-black hover:bg-zinc-200 active:scale-95 shadow-xl'}
                         `}
                     >
                         {saving ? (
@@ -105,65 +111,69 @@ const OBDDashboard = ({ data, onSaveReport, saving, expertInsight }) => {
                             </>
                         )}
                     </button>
-                    
-                    <p className="text-zinc-600 text-[8px] uppercase tracking-widest font-black text-center italic">Hardware HAL: {statusData.protocol}</p>
-                </header>
+                </div>
+            </header>
 
-                <main className="grid grid-cols-2 gap-4">
-                    <StatusCard 
-                        title="RPM Motor" 
-                        value={statusData.rpm} 
-                        unit="RPM" 
-                        icon={Activity} 
-                        color="purple"
-                        trend="Live"
-                    />
-                    <StatusCard 
-                        title="Temperatura" 
-                        value={statusData.temp} 
-                        unit="°C" 
-                        icon={Activity} 
-                        color="amber"
-                        trend="Normal"
-                    />
-                    <StatusCard 
-                        title="Voltaje" 
-                        value={statusData.battery} 
-                        unit="V" 
-                        icon={Battery} 
-                        color="blue"
-                        trend="OK"
-                    />
-                    <StatusCard 
-                        title="Carga Engine" 
-                        value={statusData.engineLoad} 
-                        unit="%" 
-                        icon={Activity} 
-                        color="emerald"
-                        trend="Vary"
-                    />
-                </main>
-
-                {/* Análisis Experto del Agente */}
-                <ExpertInsightCard 
-                    insight={expertInsight} 
-                    onConsultAI={(ins) => console.log("Consultar IA para:", ins)} 
+            <main className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                <StatusCard 
+                    title="RPM Motor" 
+                    value={statusData.rpm} 
+                    unit="RPM" 
+                    icon={Activity} 
+                    color="purple"
+                    trend="Live"
                 />
+                <StatusCard 
+                    title="Temperatura" 
+                    value={statusData.temp} 
+                    unit="°C" 
+                    icon={Activity} 
+                    color="amber"
+                    trend="Normal"
+                />
+                <StatusCard 
+                    title="Voltaje" 
+                    value={statusData.battery} 
+                    unit="V" 
+                    icon={Battery} 
+                    color="blue"
+                    trend="OK"
+                />
+                <StatusCard 
+                    title="Carga Engine" 
+                    value={statusData.engineLoad} 
+                    unit="%" 
+                    icon={Activity} 
+                    color="emerald"
+                    trend="Vary"
+                />
+            </main>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-10">
+                {/* Análisis Experto del Agente */}
+                <div className="lg:col-span-7">
+                    <ExpertInsightCard 
+                        insight={expertInsight} 
+                        onConsultAI={(ins) => console.log("Consultar IA para:", ins)} 
+                    />
+                </div>
 
                 {/* Listado Pro de Errores */}
-                {statusData.codes.length > 0 && (
-                    <div className="mt-10">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Módulos con Errores ({statusData.codes.length})</h3>
-                            <div className="h-[1px] flex-1 bg-zinc-800 ml-4" />
-                        </div>
-                        
+                <div className="lg:col-span-5">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">
+                            Módulos con Errores ({statusData.codes.length})
+                        </h3>
+                        <div className="h-[1px] flex-1 bg-zinc-800 ml-4" />
+                    </div>
+                    
+                    {statusData.codes.length > 0 ? (
                         <div className="space-y-3">
                             {statusData.codes.map(code => (
                                 <button 
                                     key={code.id}
                                     onClick={() => setSelectedDtc(code)}
-                                    className="w-full bg-zinc-900/50 border border-zinc-800 p-4 rounded-2xl flex items-center justify-between group hover:border-red-500/30 transition-all"
+                                    className="w-full bg-zinc-900/50 border border-zinc-800 p-4 rounded-2xl flex items-center justify-between group hover:border-red-500/30 transition-all hover:bg-zinc-900"
                                 >
                                     <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 bg-red-500/10 rounded-xl flex items-center justify-center text-red-500 font-black italic">
@@ -171,42 +181,45 @@ const OBDDashboard = ({ data, onSaveReport, saving, expertInsight }) => {
                                         </div>
                                         <div className="text-left">
                                             <p className="text-lg font-black italic tracking-tighter text-white">{code.id}</p>
-                                            <p className="text-[10px] text-zinc-500 font-bold uppercase truncate max-w-[180px]">{code.description}</p>
+                                            <p className="text-[10px] text-zinc-500 font-bold uppercase truncate max-w-[150px] sm:max-w-none">
+                                                {code.description || 'Falla no definida'}
+                                            </p>
                                         </div>
                                     </div>
                                     <ChevronRight size={16} className="text-zinc-700 group-hover:text-red-500 transition-colors" />
                                 </button>
                             ))}
                         </div>
-                    </div>
-                )}
-
-                {statusData.codes.length === 0 && (
-                  <div className="mt-8 p-6 bg-zinc-900/30 border border-dashed border-zinc-800 rounded-2xl flex items-center justify-center">
-                    <p className="text-zinc-600 text-sm font-medium tracking-widest uppercase italic">Diagnostic Scan: All systems clear</p>
-                  </div>
-                )}
+                    ) : (
+                        <div className="p-10 bg-zinc-900/20 border border-dashed border-zinc-800 rounded-[2rem] flex flex-col items-center justify-center text-center">
+                            <Activity className="text-emerald-500/20 w-12 h-12 mb-4" />
+                            <p className="text-zinc-600 text-[10px] font-black tracking-[0.3em] uppercase italic">
+                                Sistemas Íntegros
+                            </p>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Modal de Detalle DTC */}
             <AnimatePresence>
                 {selectedDtc && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/90 backdrop-blur-md">
                         <motion.div 
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            className="w-full max-w-md relative"
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="w-full max-w-lg relative"
                         >
                             <button 
                                 onClick={() => setSelectedDtc(null)}
-                                className="absolute -top-12 right-0 text-zinc-400 font-bold uppercase text-[10px] tracking-widest"
+                                className="absolute -top-12 right-0 px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-full text-zinc-400 font-bold uppercase text-[10px] tracking-widest hover:text-white transition-colors"
                             >
                                 [ Cerrar ]
                             </button>
                             <DtcDetailCard 
                                 dtc={selectedDtc} 
-                                freezeFrame={statusData.freezeFrames[selectedDtc.id]} 
+                                freezeFrame={statusData.freezeFrames ? statusData.freezeFrames[selectedDtc.id] : null} 
                             />
                         </motion.div>
                     </div>
