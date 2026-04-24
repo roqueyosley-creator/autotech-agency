@@ -39,9 +39,9 @@ class AgentOrchestrator {
     /**
      * Comando central para iniciar el ciclo autónomo
      */
-    startMission(config) {
+    async startMission(config) {
         this.init();
-        this.agents.scanner.start(config);
+        return await this.agents.scanner.start(config);
     }
 
     setVehicleContext(vehicle) {

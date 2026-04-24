@@ -69,5 +69,6 @@ export const AGENT_EVENTS = {
     REPORT_GENERATED: 'report:generated',
     REPORT_SENT: 'report:sent',
     UI_ALERT: 'ui:alert',
-    TOPOLOGY_UPDATED: 'topology:updated'
+    TOPOLOGY_UPDATED: 'topology:updated',
+    VIN_DECODED: 'vin:decoded'
 };

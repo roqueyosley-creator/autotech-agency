@@ -1,167 +1,138 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Bot, Send, Bell, Shield, Terminal, Save, CheckCircle2 } from 'lucide-react';
-import { automationAgent } from '../agents/automationAgent';
+import { Bot, Save, X, Terminal, Send, Bell, Cloud, Shield } from 'lucide-react';
 
+/**
+ * Componente de Configuración de Automatización e IA
+ * Gestiona webhooks, notificaciones y persistencia de reportes.
+ */
 const AutomationConfig = ({ isOpen, onClose }) => {
     const [config, setConfig] = useState({
         webhookUrl: '',
         telegramToken: '',
         telegramChatId: '',
         autoReport: true,
-        autoSave: true
+        autoSave: true,
+        aiEngine: 'gemini-1.5-pro',
+        notificationPriority: 'high'
     });
-    const [showSuccess, setShowSuccess] = useState(false);
 
     useEffect(() => {
-        if (isOpen) {
-            setConfig({
-                webhookUrl: localStorage.getItem('agent_webhook_url') || '',
-                telegramToken: localStorage.getItem('agent_telegram_token') || '',
-                telegramChatId: localStorage.getItem('agent_telegram_chat_id') || '',
-                autoReport: localStorage.getItem('agent_autoReport') !== 'false',
-                autoSave: localStorage.getItem('agent_autoSave') !== 'false'
-            });
+        const saved = localStorage.getItem('at_automation_config');
+        if (saved) {
+            try {
+                setConfig(prev => ({ ...prev, ...JSON.parse(saved) }));
+            } catch (e) {
+                console.error("Error loading automation config:", e);
+            }
         }
-    }, [isOpen]);
+    }, []);
 
     const handleSave = () => {
-        automationAgent.updateConfig(config);
-        setShowSuccess(true);
-        setTimeout(() => {
-            setShowSuccess(false);
-            onClose();
-        }, 1500);
+        localStorage.setItem('at_automation_config', JSON.stringify(config));
+        onClose();
     };
 
     if (!isOpen) return null;
 
     return (
-        <AnimatePresence>
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[400] bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-6">
+            <motion.div 
+                initial={{ scale: 0.9, opacity: 0 }} 
+                animate={{ scale: 1, opacity: 1 }} 
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-zinc-950 border border-zinc-800 w-full max-w-lg rounded-[2.5rem] p-8 max-h-[90vh] overflow-y-auto"
             >
-                <motion.div
-                    initial={{ scale: 0.9, y: 30 }}
-                    animate={{ scale: 1, y: 0 }}
-                    exit={{ scale: 0.9, y: 30 }}
-                    className="bg-zinc-950 border border-zinc-800 w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl"
-                >
-                    <div className="p-8 border-b border-white/5 flex justify-between items-center bg-zinc-900/50">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-blue-600/10 text-blue-500 rounded-2xl">
-                                <Bot size={24} />
-                            </div>
-                            <div>
-                                <h2 className="text-xl font-black text-white uppercase italic tracking-tighter">Agente de Automatización</h2>
-                                <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-1">Configuración de Flujos Inteligentes</p>
-                            </div>
+                <div className="flex justify-between items-center mb-8">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-600/20 rounded-xl text-blue-500">
+                            <Bot size={20} />
                         </div>
-                        <button onClick={onClose} className="p-2 hover:bg-zinc-800 rounded-full text-zinc-500 transition-colors">
-                            <X size={20} />
-                        </button>
+                        <h2 className="text-xl font-black italic uppercase tracking-tighter">AutoTech <span className="text-blue-500 text-sm">AGENT CONFIG</span></h2>
+                    </div>
+                    <button onClick={onClose} className="p-2 bg-zinc-900 border border-zinc-800 rounded-full text-zinc-500 hover:text-white transition-colors">
+                        <X size={20} />
+                    </button>
+                </div>
+
+                <div className="space-y-6">
+                    {/* Webhook Configuration */}
+                    <div className="p-6 bg-zinc-900/50 rounded-3xl border border-white/5 space-y-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Cloud size={14} className="text-blue-500" />
+                            <span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Webhooks (n8n / Zapier)</span>
+                        </div>
+                        <div>
+                            <label className="text-[9px] font-bold text-zinc-600 uppercase block mb-2 px-1">Endpoint URL</label>
+                            <input 
+                                type="text" 
+                                value={config.webhookUrl} 
+                                onChange={e => setConfig({...config, webhookUrl: e.target.value})}
+                                className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-xs text-blue-400 focus:border-blue-500/50 outline-none transition-all font-mono"
+                                placeholder="https://api.vuestro-server.com/hook"
+                            />
+                        </div>
                     </div>
 
-                    <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
-                        {/* Switches de Comportamiento */}
-                        <div className="space-y-4">
-                            <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                                <Terminal size={12} /> Comportamiento Automático
-                            </h3>
-                            
-                            <div className="flex items-center justify-between p-4 bg-zinc-900/30 rounded-2xl border border-white/5">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg"><Bell size={14} /></div>
-                                    <span className="text-xs font-bold text-zinc-200">Generar Reporte PDF</span>
-                                </div>
-                                <button 
-                                    onClick={() => setConfig(prev => ({ ...prev, autoReport: !prev.autoReport }))}
-                                    className={`w-10 h-5 rounded-full transition-all duration-300 relative ${config.autoReport ? 'bg-blue-600' : 'bg-zinc-700'}`}
-                                >
-                                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${config.autoReport ? 'right-1' : 'left-1'}`} />
-                                </button>
-                            </div>
-
-                            <div className="flex items-center justify-between p-4 bg-zinc-900/30 rounded-2xl border border-white/5">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-amber-500/10 text-amber-500 rounded-lg"><Shield size={14} /></div>
-                                    <span className="text-xs font-bold text-zinc-200">Guardado Silencioso en Nube</span>
-                                </div>
-                                <button 
-                                    onClick={() => setConfig(prev => ({ ...prev, autoSave: !prev.autoSave }))}
-                                    className={`w-10 h-5 rounded-full transition-all duration-300 relative ${config.autoSave ? 'bg-blue-600' : 'bg-zinc-700'}`}
-                                >
-                                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${config.autoSave ? 'right-1' : 'left-1'}`} />
-                                </button>
-                            </div>
+                    {/* AI Engine Selection */}
+                    <div className="p-6 bg-zinc-900/50 rounded-3xl border border-white/5">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Terminal size={14} className="text-emerald-500" />
+                            <span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Motor de Análisis</span>
                         </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            {['gemini-1.5-pro', 'gpt-4o'].map(model => (
+                                <button 
+                                    key={model}
+                                    onClick={() => setConfig({...config, aiEngine: model})}
+                                    className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-tighter border transition-all ${config.aiEngine === model ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-600/20' : 'bg-black border-zinc-800 text-zinc-600 hover:border-zinc-700'}`}
+                                >
+                                    {model}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
 
-                        {/* Configuración de Webhooks */}
-                        <div className="space-y-6">
-                            <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                                <Send size={12} /> Canales de Notificación
-                            </h3>
-
-                            <div className="space-y-4">
-                                <label className="block">
-                                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 mb-2 block">Webhook URL (n8n / Make / Custom)</span>
-                                    <input 
-                                        type="text" 
-                                        value={config.webhookUrl}
-                                        onChange={(e) => setConfig(prev => ({ ...prev, webhookUrl: e.target.value }))}
-                                        className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-5 py-4 text-white text-xs focus:outline-none focus:border-blue-500 placeholder:text-zinc-700"
-                                        placeholder="https://n8n.tu-instancia.com/webhook/..."
-                                    />
-                                </label>
-
-                                <div className="p-4 bg-blue-600/5 rounded-2xl border border-blue-500/10">
-                                    <p className="text-[9px] font-bold text-blue-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                        <Send size={10} /> Configuración Telegram Bot
-                                    </p>
-                                    <div className="space-y-3">
-                                        <input 
-                                            type="text" 
-                                            value={config.telegramToken}
-                                            onChange={(e) => setConfig(prev => ({ ...prev, telegramToken: e.target.value }))}
-                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-[10px] focus:outline-none focus:border-blue-500"
-                                            placeholder="Bot API Token (de BotFather)"
-                                        />
-                                        <input 
-                                            type="text" 
-                                            value={config.telegramChatId}
-                                            onChange={(e) => setConfig(prev => ({ ...prev, telegramChatId: e.target.value }))}
-                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-[10px] focus:outline-none focus:border-blue-500"
-                                            placeholder="Chat ID / Group ID"
-                                        />
+                    {/* Automation Toggles */}
+                    <div className="space-y-3">
+                        {[
+                            { id: 'autoReport', label: 'Reporte Automático', icon: <Send size={14} />, desc: 'Genera PDF al terminar el scan' },
+                            { id: 'autoSave', label: 'Persistencia en Cloud', icon: <Shield size={14} />, desc: 'Guarda histórico en Supabase' }
+                        ].map(item => (
+                            <div key={item.id} className="flex items-center justify-between p-5 bg-zinc-900/30 rounded-3xl border border-white/5">
+                                <div className="flex items-center gap-4">
+                                    <div className={`p-2 rounded-xl ${config[item.id] ? 'bg-blue-600/10 text-blue-500' : 'bg-zinc-800 text-zinc-600'}`}>
+                                        {item.icon}
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-bold text-white">{item.label}</p>
+                                        <p className="text-[9px] text-zinc-600 uppercase font-bold tracking-widest">{item.desc}</p>
                                     </div>
                                 </div>
+                                <button 
+                                    onClick={() => setConfig({...config, [item.id]: !config[item.id]})}
+                                    className={`w-12 h-6 rounded-full p-1 transition-colors ${config[item.id] ? 'bg-blue-600' : 'bg-zinc-800'}`}
+                                >
+                                    <motion.div 
+                                        animate={{ x: config[item.id] ? 24 : 0 }}
+                                        className="w-4 h-4 bg-white rounded-full shadow-md"
+                                    />
+                                </button>
                             </div>
-                        </div>
+                        ))}
                     </div>
+                </div>
 
-                    <div className="p-8 border-t border-white/5 bg-zinc-900/50">
-                        <button 
-                            onClick={handleSave}
-                            disabled={showSuccess}
-                            className={`w-full py-5 rounded-3xl font-black text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl ${
-                                showSuccess 
-                                ? 'bg-emerald-600 text-white' 
-                                : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/20'
-                            }`}
-                        >
-                            {showSuccess ? (
-                                <><CheckCircle2 size={18} /> Configuración Guardada</>
-                            ) : (
-                                <><Save size={18} /> Aplicar Automatización</>
-                            )}
-                        </button>
-                    </div>
-                </motion.div>
+                <div className="mt-8 flex gap-3">
+                    <button 
+                        onClick={handleSave} 
+                        className="flex-1 bg-white text-black py-4 rounded-3xl font-black text-[10px] uppercase tracking-widest hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2"
+                    >
+                        <Save size={16} /> Guardar Cambios
+                    </button>
+                </div>
             </motion.div>
-        </AnimatePresence>
+        </div>
     );
 };
 

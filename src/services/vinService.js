@@ -1,52 +1,33 @@
-/**
- * VIN Decoding Service for AutoTech PRO
- * Integrates with local Hono backend for advanced AI-enriched decoding.
- */
-
-const API_BASE = '/api/vin';
-
 export const vinService = {
     /**
-     * Decodifica un VIN usando el backend avanzado con IA
-     * @param {string} vin 17 digits VIN
-     * @returns {Promise<Object>} Data enriquecida del vehículo
+     * Decodifica un VIN y retorna información estructurada del vehículo.
+     * En producción esto llamaría a una API externa (NHTSA, etc.)
      */
     decode: async (vin) => {
-        if (!vin || vin.length < 11) {
-            throw new Error("VIN inválido o incompleto");
-        }
-
-        try {
-            // Llamada al backend local que combina NHTSA + Gemini
-            const response = await fetch(`${API_BASE}/decode/${vin}`);
-            
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || "Error en decodificación");
-            }
-
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            console.error("Error en vinService:", error);
-            // Fallback a decodificación básica si el backend falla
-            return {
-                vin,
-                make: 'Error',
-                model: 'Verificar Conexión',
-                year: 'N/A',
-                country: 'Unknown',
-                engine: { displacement: 'N/A', cylinders: 'N/A', fuel: 'N/A' },
-                common_issues: ["No se pudo conectar con el motor de IA."]
-            };
-        }
+        console.log(`[VIN SERVICE] Decodificando: ${vin}`);
+        return new Promise(resolve => {
+            setTimeout(() => {
+                resolve({
+                    vin: vin || 'V-SIM-2024-X',
+                    make: "Toyota",
+                    model: "Corolla GR",
+                    year: 2024,
+                    engine: {
+                        displacement: "1.6L Turbo",
+                        cylinders: 3,
+                        fuel: "Gasoline"
+                    },
+                    transmission: "Manual 6-Speed",
+                    trim: "Circuit Edition"
+                });
+            }, 1200);
+        });
     },
 
     /**
-     * Valida la estructura de un VIN (Checksum)
+     * Valida si un VIN tiene el formato correcto (17 caracteres)
      */
     isValid: (vin) => {
-        const re = /^[A-HJ-NPR-Z0-9]{17}$/i;
-        return re.test(vin);
+        return typeof vin === 'string' && vin.length === 17;
     }
 };
