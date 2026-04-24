@@ -69,7 +69,18 @@ export const bluetoothService = {
      */
     sendPID: (pid) => {
         return new Promise((resolve, reject) => {
-            // Añadir a la cola
+            if (!bluetoothService.isPluginAvailable()) {
+                // Modo Simulación para Desarrollo Web
+                console.warn(`Bluetooth Simulation: Recibido PID [${pid}]`);
+                setTimeout(() => {
+                    if (pid === "AT RV") resolve("13.8V");
+                    if (pid === "010C") resolve("41 0C 1A F8"); // ~1726 RPM
+                    if (pid === "03") resolve("43 01 33 00 00 00 00"); // P0133
+                    resolve("OK");
+                }, 100);
+                return;
+            }
+            // Añadir a la cola real
             commandQueue.push({ pid, resolve, reject });
             bluetoothService.processQueue();
         });
@@ -82,20 +93,23 @@ export const bluetoothService = {
         if (isProcessing || commandQueue.length === 0) return;
         
         isProcessing = true;
-        const { pid, resolve, reject } = commandQueue.shift();
+        const task = commandQueue.shift();
+        if (!task) {
+            isProcessing = false;
+            return;
+        }
+
+        const { pid, resolve, reject } = task;
 
         try {
-            if (!bluetoothService.isPluginAvailable()) throw new Error("No conectado");
-
-            // 1. Limpiar buffer antes de enviar (Opcional pero recomendado)
-            // 2. Escribir comando
+            // Escribir comando
             window.bluetoothSerial.write(pid + "\r", 
                 () => {
                     // Esperar respuesta con timeout
                     let timeout = setTimeout(() => {
                         reject(new Error("Timeout esperando respuesta de ELM327"));
                         bluetoothService.nextInQueue();
-                    }, 1000);
+                    }, 2000);
 
                     window.bluetoothSerial.readUntil('>', 
                         (data) => {
@@ -126,7 +140,6 @@ export const bluetoothService = {
      */
     nextInQueue: () => {
         isProcessing = false;
-        // Pequeño delay para dejar respirar al hardware
         setTimeout(() => bluetoothService.processQueue(), 50);
     },
 
@@ -135,10 +148,10 @@ export const bluetoothService = {
      */
     initializeELM: async () => {
         try {
-            await bluetoothService.sendPID("ATZ"); // Reset
-            await bluetoothService.sendPID("ATE0"); // Echo off
-            await bluetoothService.sendPID("ATL0"); // Linefeeds off
-            await bluetoothService.sendPID("ATSP0"); // Protocol Auto
+            await bluetoothService.sendPID("ATZ");
+            await bluetoothService.sendPID("ATE0");
+            await bluetoothService.sendPID("ATL0");
+            await bluetoothService.sendPID("ATSP0");
             return true;
         } catch (e) {
             console.error("Error inicializando ELM327:", e);

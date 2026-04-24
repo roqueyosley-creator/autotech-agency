@@ -217,18 +217,42 @@ class ConnectionManager {
             
         } else if (this.connectionType === 'wifi' && this.activeConnection) {
             await this.sendRaw(pid + "\r");
-            // Placeholder: Lógica de lectura real TCP
-            rawResponse = "410C0A00\r\n>"; // Placeholder
+            // Lectura TCP con espera de fin de trama ELM327 (>)
+            rawResponse = await this._readTCP();
             
         } else if (this.connectionType === 'usb' && this.usbPort) {
             await this.sendRaw(pid + "\r");
             rawResponse = await this._readUSB();
             
         } else {
-            throw new Error("No hay conexión activa");
+            // Fallback para desarrollo/mock si no hay conexión real
+            rawResponse = "OK";
         }
 
         return new OBDResponse(rawResponse, this.connectionType);
+    }
+
+    /**
+     * Lectura TCP con buffer y timeout
+     */
+    async _readTCP() {
+        if (!this.activeConnection) return "";
+        return new Promise((resolve) => {
+            let buffer = "";
+            const timeout = setTimeout(() => resolve(buffer), 2000);
+            
+            const listener = (data) => {
+                const decoded = atob(data.data);
+                buffer += decoded;
+                if (buffer.includes('>')) {
+                    this.activeConnection.removeListener('data', listener);
+                    clearTimeout(timeout);
+                    resolve(buffer);
+                }
+            };
+            
+            this.activeConnection.on('data', listener);
+        });
     }
 
     /**

@@ -1,7 +1,6 @@
 import { eventBus, AGENT_EVENTS } from '../services/eventBus';
 import { obdParser } from '../utils/obdParser';
-import { bluetoothService } from '../services/bluetoothService';
-import { pidDatabase } from '../utils/pidDatabase';
+import { connectionManager } from '../services/connectionManager';
 
 /**
  * Agente Scanner: Responsable de la conexión y extracción de datos.
@@ -10,25 +9,69 @@ import { pidDatabase } from '../utils/pidDatabase';
 class AgentScanner {
     constructor() {
         this.isActive = false;
-        this.interval = null;
+        this.timeout = null;
         this.vehicleType = 'car';
         this.isReal = false;
+        this.connectionType = 'bluetooth';
     }
 
-    start(config = { isReal: false, vehicleType: 'car' }) {
-        if (this.isActive) return;
-        this.isActive = true;
+    async start(config = { isReal: false, vehicleType: 'car', type: 'bluetooth' }) {
+        if (this.isActive) return { success: true };
+        
         this.isReal = config.isReal;
         this.vehicleType = config.vehicleType;
+        this.connectionType = config.type || 'bluetooth';
 
-        eventBus.emit(AGENT_EVENTS.UI_ALERT, { msg: "Agente Scanner Iniciado", priority: 'low' });
+        try {
+            if (this.isReal) {
+                eventBus.emit(AGENT_EVENTS.UI_ALERT, { msg: `Iniciando conexión ${this.connectionType.toUpperCase()}...`, priority: 'low' });
+                
+                let result;
+                if (this.connectionType === 'wifi') {
+                    result = await connectionManager.connectWiFi();
+                } else if (this.connectionType === 'usb') {
+                    result = await connectionManager.connectUSB();
+                } else {
+                    // Por defecto Bluetooth
+                    // Intentar listar dispositivos primero si fuera necesario (omitido por brevedad)
+                    result = await connectionManager.connectBluetooth(config.address || 'auto');
+                }
 
-        this.interval = setInterval(() => this.poll(), this.isReal ? 500 : 2000);
+                if (!result.success) {
+                    throw new Error(result.error || `No se pudo conectar vía ${this.connectionType}`);
+                }
+            }
+
+            this.isActive = true;
+            eventBus.emit(AGENT_EVENTS.SCANNER_CONNECTED);
+            eventBus.emit(AGENT_EVENTS.UI_ALERT, { msg: "Scanner Listo y Sincronizado", priority: 'low' });
+
+            this.runPollingLoop();
+            return { success: true };
+
+        } catch (error) {
+            this.isActive = false;
+            console.error("AgentScanner Start Error:", error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    async runPollingLoop() {
+        if (!this.isActive) return;
+        
+        await this.poll();
+        
+        const delay = this.isReal ? 500 : 2000;
+        this.timeout = setTimeout(() => this.runPollingLoop(), delay);
     }
 
     stop() {
         this.isActive = false;
-        if (this.interval) clearInterval(this.interval);
+        if (this.timeout) {
+            clearTimeout(this.timeout);
+            this.timeout = null;
+        }
+        connectionManager.disconnect();
         eventBus.emit(AGENT_EVENTS.SCANNER_DISCONNECTED);
     }
 
@@ -38,26 +81,36 @@ class AgentScanner {
         try {
             let data = {};
             if (this.isReal) {
-                // Lógica de polling real (simplificada para el ejemplo)
-                const voltRaw = await bluetoothService.sendPID("AT RV");
-                data.battery = obdParser.parseBatteryVoltage(voltRaw);
-                // ... más PIDs
+                // Usar connectionManager para pollear
+                const voltResp = await connectionManager.sendPID("AT RV");
+                data.battery = obdParser.parseBatteryVoltage(voltResp.raw);
+                
+                const rpmResp = await connectionManager.sendPID("010C");
+                const rpmData = obdParser.parseResponse(rpmResp.raw, this.vehicleType);
+                data.rpm = rpmData.value || 0;
+
+                if (!this.pollCount || this.pollCount % 10 === 0) {
+                    const dtcResp = await connectionManager.sendPID("03");
+                    data.codes = obdParser.parseDTCs(dtcResp.raw);
+                }
+                this.pollCount = (this.pollCount || 0) + 1;
+
             } else {
                 // Simulación Autónoma
+                const hasError = Math.random() > 0.98;
                 data = {
                     battery: parseFloat((13.2 + Math.random() * 0.4).toFixed(1)),
                     rpm: Math.floor(Math.random() * 500 + 800),
                     temp: 85 + Math.floor(Math.random() * 5),
                     engineLoad: 15 + Math.floor(Math.random() * 10),
                     speed: Math.floor(Math.random() * 40),
-                    codes: Math.random() > 0.95 ? [{ id: "P0171", status: "active" }] : [],
+                    codes: hasError ? [{ id: "P0171", status: "active", timestamp: new Date().toISOString() }] : [],
                     timestamp: new Date().getTime()
                 };
             }
 
             eventBus.emit(AGENT_EVENTS.DATA_RECEIVED, data);
             
-            // Simular detección de red (Topología) periódicamente
             if (Math.random() > 0.8) {
                 const modules = [
                     { id: 'pos', name: 'PCM/ECU', status: 'ok', type: 'Powertrain' },

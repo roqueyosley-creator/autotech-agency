@@ -3,7 +3,7 @@ import * as LucideIcons from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const ServiceCard = ({ service, brand, vehicleType, fuelType, onSelect }) => {
-    const Icon = LucideIcons[service.icon] || LucideIcons.Tool;
+    const Icon = LucideIcons[service.icon] || LucideIcons.Wrench;
     const isCompatible = (!service.fuel_type || service.fuel_type.includes(fuelType)) &&
                          (!service.vehicle_types || service.vehicle_types.includes(vehicleType));
 

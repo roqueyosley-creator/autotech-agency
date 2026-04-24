@@ -24,6 +24,29 @@ allprojects {
     }
 }
 
+subprojects {
+    afterEvaluate { project ->
+        if (project.hasProperty('android')) {
+            project.android {
+                compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_17
+                    targetCompatibility JavaVersion.VERSION_17
+                }
+            }
+        }
+        // Force JVM target 17 for all Kotlin tasks using duck typing to avoid classloading issues
+        project.tasks.configureEach { task ->
+            if (task.class.name.contains("KotlinCompile")) {
+                try {
+                    task.kotlinOptions.jvmTarget = "17"
+                } catch (Exception e) {
+                    // Ignore if the task doesn't have kotlinOptions
+                }
+            }
+        }
+    }
+}
+
 task clean(type: Delete) {
     delete rootProject.buildDir
 }

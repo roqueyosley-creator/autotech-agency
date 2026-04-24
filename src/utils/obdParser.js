@@ -71,12 +71,13 @@ export const obdParser = {
      * @param {string} hexResponse - Ej: "43 01 33 00 00 00 00" -> P0133
      */
     parseDTCs: (hexResponse) => {
-        const cleanHex = hexResponse.replace(/\s+/g, '');
-        if (cleanHex.startsWith('43')) {
+        const cleanHex = hexResponse.replace(/\s+/g, '').replace(/>/g, '');
+        if (cleanHex.startsWith('43') || cleanHex.startsWith('47')) { // Soporte para Modo 03 y 07
             const dtcs = [];
+            // Empezar después del byte de modo (43)
             for (let i = 2; i < cleanHex.length; i += 4) {
                 const chunk = cleanHex.substring(i, i + 4);
-                if (chunk === '0000') continue;
+                if (chunk === '0000' || chunk.length < 4) continue;
                 
                 // Primer nibble indica el tipo de código (P, C, B, U)
                 const firstDigit = parseInt(chunk[0], 16);
@@ -86,7 +87,11 @@ export const obdParser = {
                 if (firstDigit >= 12) prefix = 'U';
                 
                 const code = prefix + (firstDigit % 4) + chunk.substring(1);
-                dtcs.push(code);
+                dtcs.push({
+                    id: code,
+                    status: cleanHex.startsWith('47') ? 'pending' : 'active',
+                    timestamp: new Date().toISOString()
+                });
             }
             return dtcs;
         }

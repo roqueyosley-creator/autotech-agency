@@ -32,6 +32,7 @@ const AIDiagnostic = ({ vehicleData, obdData, dtcs }) => {
             setView('summary');
         } catch (err) {
             console.error("Diagnosis failed:", err);
+            eventBus.emit(AGENT_EVENTS.UI_ALERT, { msg: "Falla en motor de IA. Reintenta en breve.", priority: 'high' });
         } finally {
             setLoading(false);
         }
@@ -39,9 +40,14 @@ const AIDiagnostic = ({ vehicleData, obdData, dtcs }) => {
 
     const handleSendMessage = async () => {
         if (!input.trim() || isStreaming) return;
+        if (input.length > 500) {
+            eventBus.emit(AGENT_EVENTS.UI_ALERT, { msg: "Consulta demasiado larga. Máximo 500 caracteres.", priority: 'low' });
+            return;
+        }
         
         const userMsg = { role: 'user', text: input };
         setChatHistory(prev => [...prev, userMsg]);
+        const currentInput = input;
         setInput('');
         setIsStreaming(true);
 
@@ -49,7 +55,7 @@ const AIDiagnostic = ({ vehicleData, obdData, dtcs }) => {
         setChatHistory(prev => [...prev, aiMsg]);
 
         try {
-            const streamer = aiService.streamChat(input, chatHistory, { vehicleData, obdData, dtcs });
+            const streamer = aiService.streamChat(currentInput, chatHistory, { vehicleData, obdData, dtcs });
             for await (const chunk of streamer) {
                 setChatHistory(prev => {
                     const newHistory = [...prev];
@@ -59,6 +65,12 @@ const AIDiagnostic = ({ vehicleData, obdData, dtcs }) => {
             }
         } catch (err) {
             console.error("Chat failed:", err);
+            eventBus.emit(AGENT_EVENTS.UI_ALERT, { msg: "Error de conexión con el Asistente Experto", priority: 'high' });
+            setChatHistory(prev => {
+                const newHistory = [...prev];
+                newHistory[newHistory.length - 1].text = "Error: No se pudo completar la respuesta.";
+                return newHistory;
+            });
         } finally {
             setIsStreaming(false);
         }

@@ -45,7 +45,7 @@ class AutomationAgent {
             if (this.config.autoReport) {
                 const reportInputs = {
                     vehicleData,
-                    dtcs: obdData.dtcs || [],
+                    dtcs: obdData.codes || [],
                     telemetry: obdData.liveData || {},
                     notes: patterns.found ? `Detectado patrón recurrente: ${patterns.description}` : 'Escaneo automático completado.'
                 };
@@ -60,7 +60,7 @@ class AutomationAgent {
                         report_url: reportResult.url,
                         vehicle: `${vehicleData.make} ${vehicleData.model}`,
                         vin: vehicleData.vin,
-                        dtcs: obdData.dtcs || [],
+                        dtcs: obdData.codes || [],
                         timestamp: new Date().toISOString()
                     }
                 });
@@ -81,7 +81,7 @@ class AutomationAgent {
             const { data: history } = await diagnosticService.getHistory(vin);
             if (!history || history.length === 0) return { found: false };
 
-            const currentDtcs = (obdData.dtcs || []).map(d => d.id || d.code);
+            const currentDtcs = (obdData.codes || []).map(d => d.id || d.code);
             const pastDtcs = history.flatMap(session => (session.fault_logs || []).map(log => log.dtc_code));
 
             const recurring = currentDtcs.filter(dtc => pastDtcs.includes(dtc));

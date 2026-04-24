@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Info, Tool, CheckCircle2 } from 'lucide-react';
+import { Info, Wrench, CheckCircle2 } from 'lucide-react';
 
 const ProbabilityCard = ({ cause }) => {
     const { component, probability, explanation, test_to_confirm, expected_value, tool_needed } = cause;
@@ -31,7 +31,7 @@ const ProbabilityCard = ({ cause }) => {
             <div className="grid grid-cols-2 gap-3 mt-4">
                 <div className="bg-black/40 p-3 rounded-lg border border-white/5">
                     <div className="flex items-center gap-2 text-xs text-blue-400 mb-1 font-bold">
-                        <Tool size={14} /> PRUEBA RECOMENDADA
+                        <Wrench size={14} /> PRUEBA RECOMENDADA
                     </div>
                     <div className="text-xs text-white/80">{test_to_confirm}</div>
                 </div>
